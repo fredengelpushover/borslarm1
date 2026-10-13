@@ -3,38 +3,54 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-THRESHOLD = 0.15
+OMXSPI_THRESHOLD = 0.15
+FASTIGHET_THRESHOLD = 0.22
 
 # Svensk tid
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
 
-# Endast runt 11:30-11:40
-#if sweden_time.hour != 11:
-#    print("Inte 11-timmen")
-#    raise SystemExit
+INDEXES = {
+    "OMXSPI": "^OMXSPI",
+    "FASTIGHETER": "^SX35GI"
+}
 
-# Hämta OMXSPI
-url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EOMXSPI"
+changes = {}
 
 try:
-    r = requests.get(
-        url,
-        headers={"User-Agent": "Mozilla/5.0"},
-        timeout=20
-    )
 
-    r.raise_for_status()
+    for name, ticker in INDEXES.items():
 
-    if not r.text.strip():
-        raise Exception("Tomt svar från Yahoo")
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
 
-    data = r.json()
+        r = requests.get(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=20
+        )
 
-    result = data["chart"]["result"][0]
-    meta = result["meta"]
+        r.raise_for_status()
 
-    current = meta["regularMarketPrice"]
-    previous_close = meta["previousClose"]
+        if not r.text.strip():
+            raise Exception(f"Tomt svar från Yahoo för {ticker}")
+
+        data = r.json()
+
+        result = data["chart"]["result"][0]
+        meta = result["meta"]
+
+        current = meta["regularMarketPrice"]
+        previous_close = meta["previousClose"]
+
+        change = (current / previous_close - 1) * 100
+
+        changes[name] = change
+
+        print(
+            f"{name}: "
+            f"Current={current} "
+            f"Previous={previous_close} "
+            f"Change={change:.2f}%"
+        )
 
 except Exception as e:
 
@@ -44,26 +60,31 @@ except Exception as e:
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
             "title": "Börslarm fel",
-            "message": f"Fel vid hämtning av OMXSPI: {str(e)}"
+            "message": f"Fel vid hämtning av indexdata: {str(e)}"
         },
         timeout=20,
     )
 
     raise
 
-meta = data["chart"]["result"][0]["meta"]
+omx_trigger = changes["OMXSPI"] > OMXSPI_THRESHOLD
+fastighet_trigger = changes["FASTIGHETER"] > FASTIGHET_THRESHOLD
 
-current = meta["regularMarketPrice"]
-previous_close = meta["previousClose"]
+if omx_trigger or fastighet_trigger:
 
-daily_change = (current / previous_close - 1) * 100
+    triggers = []
 
-print(f"Current: {current}")
-print(f"Previous Close: {previous_close}")
-print(f"Change: {daily_change:.2f}%")
-print(f"OMXSPI: {daily_change:.2f}%")
+    if omx_trigger:
+        triggers.append(
+            f"OMXSPI {changes['OMXSPI']:.2f}% "
+            f">(gräns {OMXSPI_THRESHOLD:.2f}%)"
+        )
 
-if daily_change > THRESHOLD:
+    if fastighet_trigger:
+        triggers.append(
+            f"Fastigheter {changes['FASTIGHETER']:.2f}% "
+            f">(gräns {FASTIGHET_THRESHOLD:.2f}%)"
+        )
 
     requests.post(
         "https://api.pushover.net/1/messages.json",
@@ -72,9 +93,10 @@ if daily_change > THRESHOLD:
             "user": os.environ["PUSHOVER_USER"],
             "title": "Börslarm",
             "message": (
-                f"OMXSPI är upp {daily_change:.2f}% "
-                f"kl {sweden_time.strftime('%H:%M')}. "
-                f"\nLarmnivå {THRESHOLD:.1f}% passerad."
+                f"{' | '.join(triggers)}\n\n"
+                f"OMXSPI: {changes['OMXSPI']:.2f}%\n"
+                f"Fastigheter: {changes['FASTIGHETER']:.2f}%\n\n"
+                f"Kl {sweden_time.strftime('%H:%M')}"
             ),
         },
         timeout=20,
