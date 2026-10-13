@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
 
   schedule:
+
+    - cron: '* * * * 1-5'
+
     # 10:30 svensk tid (ungefär)
     - cron: '30 8 * * 1-5'
 
