@@ -103,22 +103,6 @@ small_trigger = proxy_change > SMABOLAG_THRESHOLD
 
 if omx_trigger or fast_trigger or small_trigger:
 
-    triggered = []
-
-    if omx_trigger:
-        triggered.append(
-            f"OMXSPI {omx_change:.2f}%"
-        )
-
-    if fast_trigger:
-        triggered.append(
-            f"Fastigheter {fast_change:.2f}%"
-        )
-
-    if small_trigger:
-        triggered.append(
-            f"Småbolag {proxy_change:.2f}%"
-        )
 
     requests.post(
         "https://api.pushover.net/1/messages.json",
@@ -127,14 +111,12 @@ if omx_trigger or fast_trigger or small_trigger:
             "user": os.environ["PUSHOVER_USER"],
             "title": "Börslarm",
             "message": (
-                f"TRIGGER: {' | '.join(triggered)}\n\n"
                 f"OMXSPI: {omx_change:.2f}% "
                 f"(gräns {OMXSPI_THRESHOLD:.2f}%)\n"
                 f"Fastigheter: {fast_change:.2f}% "
                 f"(gräns {FASTIGHET_THRESHOLD:.2f}%)\n"
                 f"Småbolag: {proxy_change:.2f}% "
                 f"(gräns {SMABOLAG_THRESHOLD:.2f}%)\n\n"
-                f"Kl {sweden_time.strftime('%H:%M')}"
             ),
         },
         timeout=20,
