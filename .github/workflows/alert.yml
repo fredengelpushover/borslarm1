@@ -16,7 +16,7 @@ jobs:
 
       - run: pip install requests
 
-      - run: python alert.py
+      - run: python alert1.py
         env:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
