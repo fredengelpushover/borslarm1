@@ -36,16 +36,14 @@ jobs:
 
       - name: Run alert3
         run: python alert3.py
+        env:
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
 
       - name: Commit history
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add fastighet_history.json
+          git add history.json
           git diff --cached --quiet || git commit -m "Update history"
           git push
-          
-        
-        env:
-          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
-          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
