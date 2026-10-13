@@ -16,7 +16,17 @@ sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
 # Hämta OMXSPI
 url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EOMXSPI"
 
-r = requests.get(url, timeout=20)
+r = requests.get(
+    url,
+    headers={
+        "User-Agent": "Mozilla/5.0"
+    },
+    timeout=20
+)
+
+print("Status:", r.status_code)
+print("Text:", r.text[:500])
+
 data = r.json()
 
 meta = data["chart"]["result"][0]["meta"]
