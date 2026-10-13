@@ -66,7 +66,7 @@ if two_day_change > THRESHOLD:
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            #"title": "Tvådagarslarm",
+            "title": "Tvådagarsutveckling: (sälj kl10)",
             "message": (
                 f"2d OMXSPI är upp {two_day_change:.2f}% "
                 #f"sedan stängning för två handelsdagar sedan. "
