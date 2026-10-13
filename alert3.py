@@ -1,52 +1,40 @@
+import json
 import os
-import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-THRESHOLD = 0.15
+import requests
 
-# Svensk tid
-sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
+THRESHOLD = 3.0
 
-INDEXES = {
-    "large": ("^OMXSLCGI", 0.30),
-    "mid": ("^OMXSMCGI", 0.50),
-    "small": ("^OMXSSCGI", 0.20),
-}
+FILE = "fastighet_history.json"
+
+sweden_time = datetime.now(
+    ZoneInfo("Europe/Stockholm")
+)
+
+today = sweden_time.strftime("%Y-%m-%d")
 
 try:
 
-    proxy_change = 0
+    url = (
+        "https://query1.finance.yahoo.com/"
+        "v8/finance/chart/%5ESX35GI"
+    )
 
-    for name, (ticker, weight) in INDEXES.items():
+    r = requests.get(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=20
+    )
 
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+    r.raise_for_status()
 
-        r = requests.get(
-            url,
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=20
-        )
+    data = r.json()
 
-        r.raise_for_status()
+    meta = data["chart"]["result"][0]["meta"]
 
-        data = r.json()
-
-        meta = data["chart"]["result"][0]["meta"]
-
-        current = meta["regularMarketPrice"]
-        previous_close = meta["previousClose"]
-
-        change = (current / previous_close - 1) * 100
-
-        proxy_change += weight * change
-
-        print(
-            f"{name}: "
-            f"current={current}, "
-            f"previous={previous_close}, "
-            f"change={change:.2f}%"
-        )
+    current = meta["regularMarketPrice"]
 
 except Exception as e:
 
@@ -55,29 +43,71 @@ except Exception as e:
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            "title": "Börslarm fel",
-            "message": f"Fel vid hämtning av indexdata: {str(e)}"
+            "title": "Fastighetslarm fel",
+            "message": str(e)
         },
         timeout=20,
     )
 
     raise
 
-print(f"Proxy för PLUS Småbolag: {proxy_change:.2f}%")
+# Läs historik
 
-if proxy_change > THRESHOLD:
+if os.path.exists(FILE):
+
+    with open(FILE, "r") as f:
+        history = json.load(f)
+
+else:
+
+    history = {}
+
+# Uppdatera dagens värde
+
+history[today] = current
+
+# Spara
+
+with open(FILE, "w") as f:
+    json.dump(
+        history,
+        f,
+        indent=2
+    )
+
+dates = sorted(history.keys())
+
+if len(dates) < 3:
+    print("För få dagar sparade")
+    raise SystemExit
+
+two_days_ago = dates[-3]
+
+two_days_ago_close = history[two_days_ago]
+
+change = (
+    current / two_days_ago_close - 1
+) * 100
+
+print(
+    f"Current={current} "
+    f"2dClose={two_days_ago_close} "
+    f"Change={change:.2f}%"
+)
+
+if change > THRESHOLD:
 
     requests.post(
         "https://api.pushover.net/1/messages.json",
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            "title": "Småbolagslarm",
+            "title": "Fastigheter 2 dagar",
             "message": (
-                f"PLUS Småbolag-proxy är upp "
-                f"{proxy_change:.2f}% "
-                f"kl {sweden_time.strftime('%H:%M')}. "
-                f"\nLarmnivå {THRESHOLD:.1f}% passerad."
+                f"Fastighetsindex är upp "
+                f"{change:.2f}% på två dagar.\n"
+                f"Kl {sweden_time.strftime('%H:%M')}\n"
+                f"Larmnivå {THRESHOLD:.1f}%"
             ),
         },
         timeout=20,
