@@ -66,12 +66,12 @@ if two_day_change > THRESHOLD:
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            "title": "Tvådagarslarm",
+            #"title": "Tvådagarslarm",
             "message": (
-                f"OMXSPI är upp {two_day_change:.2f}% "
-                f"sedan stängning för två handelsdagar sedan. "
-                f"Kl {sweden_time.strftime('%H:%M')}. "
-                f"Larmnivå {THRESHOLD:.1f}% passerad."
+                f"2d OMXSPI är upp {two_day_change:.2f}% "
+                #f"sedan stängning för två handelsdagar sedan. "
+                #f"Kl {sweden_time.strftime('%H:%M')}. "
+                f"(gräns {THRESHOLD:.1f}%)"
             ),
         },
         timeout=20,
