@@ -11,7 +11,7 @@ sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
 
 INDEXES = {
     "OMXSPI": "^OMXSPI",
-    "FASTIGHETER": "^SX35GI"
+    "FASTIGHETER": "^SX35PI"
 }
 
 changes = {}
