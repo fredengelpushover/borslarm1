@@ -46,9 +46,12 @@ try:
         closes = result["indicators"]["quote"][0]["close"]
         closes = [x for x in closes if x is not None]
 
+        print(f"{ticker} closes:")
+        print(closes)
+
         if len(closes) < 3:
             raise Exception(
-                f"För få historiska kurser för {ticker}"
+        f"För få historiska kurser för {ticker}"
             )
 
         two_days_ago_close = closes[-3]
