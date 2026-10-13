@@ -109,7 +109,7 @@ if omx_trigger or fast_trigger or small_trigger:
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            #"title": "Börslarm",
+            "title": "Dagens utveckling:",
             "message": (
                 f"1d OMXSPI: {omx_change:.2f}% "
                 f"(gräns {OMXSPI_THRESHOLD:.2f}%)\n"
