@@ -27,8 +27,15 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run alert
+  - name: Run alert1
         run: python alert1.py
         env:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+
+      - name: Run alert2
+        run: python alert2.py
+        env:
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          
