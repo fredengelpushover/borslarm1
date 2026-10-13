@@ -94,9 +94,6 @@ if omx_trigger or fastighet_trigger:
             "title": "Börslarm",
             "message": (
                 f"{' | '.join(triggers)}\n\n"
-                f"OMXSPI: {changes['OMXSPI']:.2f}%\n"
-                f"Fastigheter: {changes['FASTIGHETER']:.2f}%\n\n"
-                f"Kl {sweden_time.strftime('%H:%M')}"
             ),
         },
         timeout=20,
