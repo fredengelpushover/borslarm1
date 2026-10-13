@@ -4,17 +4,12 @@ on:
   workflow_dispatch:
 
   schedule:
-
     - cron: '* * * * 1-5'
 
-    # 10:30 svensk tid (ungefär)
-    - cron: '30 8 * * 1-5'
-
-    # 11:30 svensk tid (ungefär)
-    - cron: '30 9 * * 1-5'
-
-    # 12:30 svensk tid (ungefär)
-    - cron: '30 10 * * 1-5'
+    # 10:30 11.30 12.30 svensk tid (ungefär)
+    #- cron: '30 8 * * 1-5'
+    #- cron: '30 9 * * 1-5'
+    #- cron: '30 10 * * 1-5'
 
 jobs:
   alert:
