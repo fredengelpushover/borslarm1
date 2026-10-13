@@ -74,7 +74,7 @@ if daily_change > THRESHOLD:
             "message": (
                 f"OMXSPI är upp {daily_change:.2f}% "
                 f"kl {sweden_time.strftime('%H:%M')}. "
-                f"Larmnivå {THRESHOLD:.1f}% passerad."
+                f"\nLarmnivå {THRESHOLD:.1f}% passerad."
             ),
         },
         timeout=20,
