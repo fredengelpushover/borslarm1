@@ -4,53 +4,83 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 OMXSPI_THRESHOLD = 0.15
-FASTIGHET_THRESHOLD = 0.22
+FASTIGHET_THRESHOLD = 0.220
+SMABOLAG_THRESHOLD = 0.11100
 
-# Svensk tid
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
-
-INDEXES = {
-    "OMXSPI": "^OMXSPI",
-    "FASTIGHETER": "^SX35GI"
-}
-
-changes = {}
 
 try:
 
-    for name, ticker in INDEXES.items():
+    # ---------- OMXSPI ----------
 
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+    r = requests.get(
+        "https://query1.finance.yahoo.com/v8/finance/chart/%5EOMXSPI",
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=20
+    )
+
+    r.raise_for_status()
+
+    meta = r.json()["chart"]["result"][0]["meta"]
+
+    omx_change = (
+        meta["regularMarketPrice"]
+        / meta["previousClose"]
+        - 1
+    ) * 100
+
+    print(f"OMXSPI: {omx_change:.2f}%")
+
+    # ---------- FASTIGHETER ----------
+
+    r = requests.get(
+        "https://query1.finance.yahoo.com/v8/finance/chart/%5ESX35GI",
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=20
+    )
+
+    r.raise_for_status()
+
+    meta = r.json()["chart"]["result"][0]["meta"]
+
+    fast_change = (
+        meta["regularMarketPrice"]
+        / meta["previousClose"]
+        - 1
+    ) * 100
+
+    print(f"Fastigheter: {fast_change:.2f}%")
+
+    # ---------- SMÅBOLAGSPROXY ----------
+
+    proxy_change = 0
+
+    small_indexes = {
+        "^OMXSLCGI": 0.30,
+        "^OMXSMCGI": 0.50,
+        "^OMXSSCGI": 0.20,
+    }
+
+    for ticker, weight in small_indexes.items():
 
         r = requests.get(
-            url,
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}",
             headers={"User-Agent": "Mozilla/5.0"},
             timeout=20
         )
 
         r.raise_for_status()
 
-        if not r.text.strip():
-            raise Exception(f"Tomt svar från Yahoo för {ticker}")
-
-        data = r.json()
-
-        result = data["chart"]["result"][0]
-        meta = result["meta"]
+        meta = r.json()["chart"]["result"][0]["meta"]
 
         current = meta["regularMarketPrice"]
-        previous_close = meta["previousClose"]
+        previous = meta["previousClose"]
 
-        change = (current / previous_close - 1) * 100
+        change = (current / previous - 1) * 100
 
-        changes[name] = change
+        proxy_change += weight * change
 
-        print(
-            f"{name}: "
-            f"Current={current} "
-            f"Previous={previous_close} "
-            f"Change={change:.2f}%"
-        )
+    print(f"Småbolagsproxy: {proxy_change:.2f}%")
 
 except Exception as e:
 
@@ -60,30 +90,34 @@ except Exception as e:
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
             "title": "Börslarm fel",
-            "message": f"Fel vid hämtning av indexdata: {str(e)}"
+            "message": str(e),
         },
         timeout=20,
     )
 
     raise
 
-omx_trigger = changes["OMXSPI"] > OMXSPI_THRESHOLD
-fastighet_trigger = changes["FASTIGHETER"] > FASTIGHET_THRESHOLD
+omx_trigger = omx_change > OMXSPI_THRESHOLD
+fast_trigger = fast_change > FASTIGHET_THRESHOLD
+small_trigger = proxy_change > SMABOLAG_THRESHOLD
 
-if omx_trigger or fastighet_trigger:
+if omx_trigger or fast_trigger or small_trigger:
 
-    triggers = []
+    triggered = []
 
     if omx_trigger:
-        triggers.append(
-            f"OMXSPI {changes['OMXSPI']:.2f}% "
-            f">(gräns {OMXSPI_THRESHOLD:.2f}%)"
+        triggered.append(
+            f"OMXSPI {omx_change:.2f}%"
         )
 
-    if fastighet_trigger:
-        triggers.append(
-            f"Fastigheter {changes['FASTIGHETER']:.2f}% "
-            f">(gräns {FASTIGHET_THRESHOLD:.2f}%)"
+    if fast_trigger:
+        triggered.append(
+            f"Fastigheter {fast_change:.2f}%"
+        )
+
+    if small_trigger:
+        triggered.append(
+            f"Småbolag {proxy_change:.2f}%"
         )
 
     requests.post(
@@ -93,7 +127,14 @@ if omx_trigger or fastighet_trigger:
             "user": os.environ["PUSHOVER_USER"],
             "title": "Börslarm",
             "message": (
-                f"{' | '.join(triggers)}\n\n"
+                f"TRIGGER: {' | '.join(triggered)}\n\n"
+                f"OMXSPI: {omx_change:.2f}% "
+                f"(gräns {OMXSPI_THRESHOLD:.2f}%)\n"
+                f"Fastigheter: {fast_change:.2f}% "
+                f"(gräns {FASTIGHET_THRESHOLD:.2f}%)\n"
+                f"Småbolag: {proxy_change:.2f}% "
+                f"(gräns {SMABOLAG_THRESHOLD:.2f}%)\n\n"
+                f"Kl {sweden_time.strftime('%H:%M')}"
             ),
         },
         timeout=20,
