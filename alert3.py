@@ -5,9 +5,10 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-THRESHOLD = 3.0
+FASTIGHET_THRESHOLD = 3.0
+SMABOLAG_THRESHOLD = 2.0
 
-FILE = "fastighet_history.json"
+FILE = "history.json"
 
 sweden_time = datetime.now(
     ZoneInfo("Europe/Stockholm")
@@ -15,12 +16,10 @@ sweden_time = datetime.now(
 
 today = sweden_time.strftime("%Y-%m-%d")
 
-try:
 
-    url = (
-        "https://query1.finance.yahoo.com/"
-        "v8/finance/chart/%5ESX35GI"
-    )
+def get_change_today(ticker):
+
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
 
     r = requests.get(
         url,
@@ -35,6 +34,28 @@ try:
     meta = data["chart"]["result"][0]["meta"]
 
     current = meta["regularMarketPrice"]
+    previous_close = meta["previousClose"]
+
+    return current, previous_close
+
+
+try:
+
+    # Fastigheter
+
+    fast_current, _ = get_change_today("%5ESX35GI")
+
+    # Småbolagsproxy
+
+    large_current, _ = get_change_today("%5EOMXSLCGI")
+    mid_current, _ = get_change_today("%5EOMXSMCGI")
+    small_current, _ = get_change_today("%5EOMXSSCGI")
+
+    small_proxy_current = (
+        0.30 * large_current
+        + 0.50 * mid_current
+        + 0.20 * small_current
+    )
 
 except Exception as e:
 
@@ -43,13 +64,14 @@ except Exception as e:
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            "title": "Fastighetslarm fel",
+            "title": "Börslarm fel",
             "message": str(e)
         },
         timeout=20,
     )
 
     raise
+
 
 # Läs historik
 
@@ -62,11 +84,16 @@ else:
 
     history = {}
 
-# Uppdatera dagens värde
 
-history[today] = current
+# Uppdatera dagens värden
 
-# Spara
+history[today] = {
+    "fastighet": fast_current,
+    "smabolag": small_proxy_current
+}
+
+
+# Spara historik
 
 with open(FILE, "w") as f:
     json.dump(
@@ -75,45 +102,40 @@ with open(FILE, "w") as f:
         indent=2
     )
 
+
 dates = sorted(history.keys())
 
 if len(dates) < 3:
-    print("För få dagar sparade")
+
+    print(
+        f"Behöver minst 3 dagar historik. "
+        f"Har {len(dates)}."
+    )
+
     raise SystemExit
+
 
 two_days_ago = dates[-3]
 
-two_days_ago_close = history[two_days_ago]
+fast_two_days_ago = history[two_days_ago]["fastighet"]
 
-change = (
-    current / two_days_ago_close - 1
+small_two_days_ago = history[two_days_ago]["smabolag"]
+
+fast_change = (
+    fast_current / fast_two_days_ago - 1
+) * 100
+
+small_change = (
+    small_proxy_current / small_two_days_ago - 1
 ) * 100
 
 print(
-    f"Current={current} "
-    f"2dClose={two_days_ago_close} "
-    f"Change={change:.2f}%"
+    f"Fastigheter: "
+    f"{fast_change:.2f}%"
 )
 
-if change > THRESHOLD:
+print(
+    f"Småbolag: "
+    f"{small_change:.2f}%"
+)
 
-    requests.post(
-        "https://api.pushover.net/1/messages.json",
-        data={
-            "token": os.environ["PUSHOVER_TOKEN"],
-            "user": os.environ["PUSHOVER_USER"],
-            "title": "Fastigheter 2 dagar",
-            "message": (
-                f"Fastighetsindex är upp "
-                f"{change:.2f}% på två dagar.\n"
-                f"Kl {sweden_time.strftime('%H:%M')}\n"
-                f"Larmnivå {THRESHOLD:.1f}%"
-            ),
-        },
-        timeout=20,
-    )
-
-    print("Notification sent")
-
-else:
-    print("No alert")
