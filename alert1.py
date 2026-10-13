@@ -3,9 +3,9 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-OMXSPI_THRESHOLD = 0.15
-FASTIGHET_THRESHOLD = 0.220
-SMABOLAG_THRESHOLD = 0.11100
+OMXSPI_THRESHOLD = 1.4
+SMABOLAG_THRESHOLD = 1.4
+FASTIGHET_THRESHOLD = 2.0
 
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
 
