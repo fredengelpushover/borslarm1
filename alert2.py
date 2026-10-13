@@ -3,71 +3,41 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-OMXSPI_THRESHOLD = 1.50
-FASTIGHET_THRESHOLD = 3.00
+THRESHOLD = 1.5
 
 # Svensk tid
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
 
-INDEXES = {
-    "OMXSPI": "^OMXSPI",
-    "FASTIGHETER": "^SX35PI"
-}
-
-changes = {}
+# Hämta OMXSPI med historik
+url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EOMXSPI?range=5d&interval=1d"
 
 try:
+    r = requests.get(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=20
+    )
 
-    for name, ticker in INDEXES.items():
+    r.raise_for_status()
 
-        url = (
-            f"https://query1.finance.yahoo.com/v8/finance/chart/"
-            f"{ticker}?range=5d&interval=1d"
-        )
+    if not r.text.strip():
+        raise Exception("Tomt svar från Yahoo")
 
-        r = requests.get(
-            url,
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=20
-        )
+    data = r.json()
 
-        r.raise_for_status()
+    result = data["chart"]["result"][0]
+    meta = result["meta"]
 
-        if not r.text.strip():
-            raise Exception(f"Tomt svar från Yahoo för {ticker}")
+    current = meta["regularMarketPrice"]
 
-        data = r.json()
+    closes = result["indicators"]["quote"][0]["close"]
 
-        result = data["chart"]["result"][0]
-        meta = result["meta"]
+    closes = [x for x in closes if x is not None]
 
-        current = meta["regularMarketPrice"]
+    if len(closes) < 3:
+        raise Exception("För få historiska kurser")
 
-        closes = result["indicators"]["quote"][0]["close"]
-        closes = [x for x in closes if x is not None]
-
-        print(f"{ticker} closes:")
-        print(closes)
-
-        if len(closes) < 3:
-            raise Exception(
-        f"För få historiska kurser för {ticker}"
-            )
-
-        two_days_ago_close = closes[-3]
-
-        change = (
-            current / two_days_ago_close - 1
-        ) * 100
-
-        changes[name] = change
-
-        print(
-            f"{name}: "
-            f"Current={current} "
-            f"2dClose={two_days_ago_close} "
-            f"Change={change:.2f}%"
-        )
+    two_days_ago_close = closes[-3]
 
 except Exception as e:
 
@@ -77,48 +47,32 @@ except Exception as e:
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
             "title": "Börslarm fel",
-            "message": f"Fel vid hämtning av indexdata: {str(e)}"
+            "message": f"Fel vid hämtning av OMXSPI: {str(e)}"
         },
         timeout=20,
     )
 
     raise
 
-omx_trigger = changes["OMXSPI"] > OMXSPI_THRESHOLD
-fastighet_trigger = (
-    changes["FASTIGHETER"] > FASTIGHET_THRESHOLD
-)
+two_day_change = (current / two_days_ago_close - 1) * 100
 
-if omx_trigger or fastighet_trigger:
+print(f"Current: {current}")
+print(f"Two days ago close: {two_days_ago_close}")
+print(f"2-day change: {two_day_change:.2f}%")
 
-    triggers = []
-
-    if omx_trigger:
-        triggers.append(
-            f"OMXSPI 2d {changes['OMXSPI']:.2f}% "
-            f">(gräns {OMXSPI_THRESHOLD:.2f}%)"
-        )
-
-    if fastighet_trigger:
-        triggers.append(
-            f"Fastigheter 2d "
-            f"{changes['FASTIGHETER']:.2f}% "
-            f">(gräns {FASTIGHET_THRESHOLD:.2f}%)"
-        )
+if two_day_change > THRESHOLD:
 
     requests.post(
         "https://api.pushover.net/1/messages.json",
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            "title": "Börslarm 2 dagar",
+            "title": "Tvådagarslarm",
             "message": (
-                f"{' | '.join(triggers)}\n\n"
-                f"OMXSPI 2 dagar: "
-                f"{changes['OMXSPI']:.2f}%\n"
-                f"Fastigheter 2 dagar: "
-                f"{changes['FASTIGHETER']:.2f}%\n\n"
-                f"Kl {sweden_time.strftime('%H:%M')}"
+                f"OMXSPI är upp {two_day_change:.2f}% "
+                f"sedan stängning för två handelsdagar sedan. "
+                f"Kl {sweden_time.strftime('%H:%M')}. "
+                f"Larmnivå {THRESHOLD:.1f}% passerad."
             ),
         },
         timeout=20,
