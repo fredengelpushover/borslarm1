@@ -3,7 +3,7 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-THRESHOLD = 0.15
+THRESHOLD = 1.4
 
 # Svensk tid
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
