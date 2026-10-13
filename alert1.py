@@ -24,8 +24,7 @@ r = requests.get(
     timeout=20
 )
 
-print("Status:", r.status_code)
-print("Text:", r.text[:500])
+r.raise_for_status()
 
 data = r.json()
 
