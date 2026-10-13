@@ -6,11 +6,6 @@ on:
   schedule:
     - cron: '*/12 * * * 1-5'
 
-    # 10:30 11.30 12.30 svensk tid (ungefär)
-    #- cron: '30 8 * * 1-5'
-    #- cron: '30 9 * * 1-5'
-    #- cron: '30 10 * * 1-5'
-
 jobs:
   alert:
     runs-on: ubuntu-latest
@@ -27,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-  - name: Run alert1
+      - name: Run alert1
         run: python alert1.py
         env:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
@@ -44,4 +39,3 @@ jobs:
         env:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-                    
