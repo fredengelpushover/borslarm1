@@ -131,18 +131,6 @@ print(f"small_trigger={small_trigger}")
 
 if fast_trigger or small_trigger:
 
-    triggers = []
-
-    if fast_trigger:
-        triggers.append(
-            f"Fastigheter {fast_change:.2f}%"
-        )
-
-    if small_trigger:
-        triggers.append(
-            f"Småbolag {small_change:.2f}%"
-        )
-
     requests.post(
         "https://api.pushover.net/1/messages.json",
         data={
@@ -151,13 +139,12 @@ if fast_trigger or small_trigger:
             "title": "Börslarm 2 dagar",
             "message": (
                 f"TRIGGER: {' | '.join(triggers)}\n\n"
-                f"Fastigheter 2 dagar: "
+                f"Fastigheter 2d: "
                 f"{fast_change:.2f}% "
                 f"(gräns {FASTIGHET_THRESHOLD:.2f}%)\n"
-                f"Småbolag 2 dagar: "
+                f"Småbolag 2d: "
                 f"{small_change:.2f}% "
                 f"(gräns {SMABOLAG_THRESHOLD:.2f}%)\n\n"
-                f"Kl {sweden_time.strftime('%H:%M')}"
             ),
         },
         timeout=20,
