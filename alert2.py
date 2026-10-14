@@ -3,11 +3,20 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+# TVÅDAGARSKOLL FÖR SWEDEN_ALLCAP
+
 THRESHOLD = 1.4
 
 # Svensk tid
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
-
+if not (
+    (sweden_time.hour == 9 and sweden_time.minute >= 5)
+    or
+    (sweden_time.hour == 10 and sweden_time.minute <= 10)
+):
+    print(f"Outside allowed time window: {sweden_time:%H:%M:%S} Sweden time")
+    exit()
+    
 # Hämta OMXSPI med historik
 url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EOMXSPI?range=5d&interval=1d"
 
