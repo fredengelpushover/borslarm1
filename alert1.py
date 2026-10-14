@@ -8,7 +8,14 @@ SMABOLAG_THRESHOLD = 1.4
 FASTIGHET_THRESHOLD = 2.0
 
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
-
+if not (
+    (sweden_time.hour == 10 and sweden_time.minute >= 45)
+    or
+    (sweden_time.hour == 11 and sweden_time.minute <= 45)
+):
+    print(f"Outside allowed time window: {sweden_time:%H:%M:%S} Sweden time")
+    exit()
+    
 try:
 
     # ---------- OMXSPI ----------
