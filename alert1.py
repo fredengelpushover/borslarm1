@@ -55,6 +55,12 @@ try:
     print(f"(regularMarketPrice {meta['regularMarketPrice']:.2f})")
     print(f"(previousClose {meta['previousClose']:.2f})")
 
+    print(f"Index: {meta.get('longName', meta.get('symbol'))}")
+    print(f"regularMarketPrice: {meta.get('regularMarketPrice')}")
+    print(f"previousClose: {meta.get('previousClose')}")
+    print(f"chartPreviousClose: {meta.get('chartPreviousClose')}")
+    print(f"regularMarketTime: {meta.get('regularMarketTime')}")
+
     fast_change = (
         meta["regularMarketPrice"]
         / meta["previousClose"]
