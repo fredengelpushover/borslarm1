@@ -52,6 +52,9 @@ try:
 
     meta = r.json()["chart"]["result"][0]["meta"]
 
+    print(f"(regularMarketPrice {meta['regularMarketPrice']:.2f})")
+    print(f"(previousClose {meta['previousClose']:.2f})")
+
     fast_change = (
         meta["regularMarketPrice"]
         / meta["previousClose"]
