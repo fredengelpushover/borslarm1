@@ -60,6 +60,13 @@ try:
     print(f"previousClose: {meta.get('previousClose')}")
     print(f"chartPreviousClose: {meta.get('chartPreviousClose')}")
     print(f"regularMarketTime: {meta.get('regularMarketTime')}")
+    print("Yahoo symbol:", meta.get("symbol"))
+    print("Yahoo timezone:", meta.get("timezone"))
+    print("Yahoo current:", meta.get("regularMarketPrice"))
+    print("Yahoo previous:", meta.get("previousClose"))
+    print("Yahoo timestamp:", datetime.fromtimestamp(
+        meta["regularMarketTime"], ZoneInfo("Europe/Stockholm")
+    ))
 
     fast_change = (
         meta["regularMarketPrice"]
