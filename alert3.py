@@ -10,10 +10,16 @@ SMABOLAG_THRESHOLD = 0.20
 
 FILE = "history.json"
 
-sweden_time = datetime.now(
-    ZoneInfo("Europe/Stockholm")
-)
+sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
 
+if not (
+    (sweden_time.hour == 9 and sweden_time.minute >= 5)
+    or
+    (sweden_time.hour == 10 and sweden_time.minute <= 15)
+):
+    print(f"Outside allowed time window: {sweden_time:%H:%M:%S} Sweden time")
+    exit()
+    
 today = sweden_time.strftime("%Y-%m-%d")
 
 
@@ -136,7 +142,7 @@ if fast_trigger or small_trigger:
         data={
             "token": os.environ["PUSHOVER_TOKEN"],
             "user": os.environ["PUSHOVER_USER"],
-            "title": "Börslarm 2 dagar",
+            "title": "Tvådagarsutveckling: (sälj kl10)",
             "message": (
                 f"TRIGGER: {' | '.join(triggers)}\n\n"
                 f"Fastigheter 2d: "
