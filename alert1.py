@@ -3,6 +3,8 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+# ENDAGARSKOLL FÖR SWEDEN_ALL; SWEDEN_SMALLCAP; SWEDEN_FASTIGHETER
+
 OMXSPI_THRESHOLD = 1.4
 SMABOLAG_THRESHOLD = 1.4
 FASTIGHET_THRESHOLD = 2.0
