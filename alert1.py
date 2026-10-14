@@ -1,7 +1,8 @@
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+
 
 # ENDAGARSKOLL FÖR SWEDEN_ALL; SWEDEN_SMALLCAP; SWEDEN_FASTIGHETER
 
@@ -55,18 +56,36 @@ try:
     print(f"(regularMarketPrice {meta['regularMarketPrice']:.2f})")
     print(f"(previousClose {meta['previousClose']:.2f})")
 
-    print(f"Index: {meta.get('longName', meta.get('symbol'))}")
-    print(f"regularMarketPrice: {meta.get('regularMarketPrice')}")
-    print(f"previousClose: {meta.get('previousClose')}")
-    print(f"chartPreviousClose: {meta.get('chartPreviousClose')}")
-    print(f"regularMarketTime: {meta.get('regularMarketTime')}")
-    print("Yahoo symbol:", meta.get("symbol"))
-    print("Yahoo timezone:", meta.get("timezone"))
-    print("Yahoo current:", meta.get("regularMarketPrice"))
-    print("Yahoo previous:", meta.get("previousClose"))
-    print("Yahoo timestamp:", datetime.fromtimestamp(
-        meta["regularMarketTime"], ZoneInfo("Europe/Stockholm")
-    ))
+
+    ticker = "%5ESX35GI"
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+
+    now = datetime.now(ZoneInfo("Europe/Stockholm"))
+    period2 = int(now.timestamp())
+    period1 = int((now - timedelta(days=10)).timestamp())
+
+    r = requests.get(
+        url,
+        params={
+            "period1": period1,
+            "period2": period2,
+            "interval": "1d",
+        },
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=20,
+    )
+    r.raise_for_status()
+
+    result = r.json()["chart"]["result"][0]
+    timestamps = result["timestamp"]
+    closes = result["indicators"]["quote"][0]["close"]
+
+    for ts, close in zip(timestamps, closes):
+        date = datetime.fromtimestamp(
+            ts, ZoneInfo("Europe/Stockholm")
+        ).date()
+        print(date, close)
+    
 
     fast_change = (
         meta["regularMarketPrice"]
