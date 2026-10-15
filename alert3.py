@@ -6,8 +6,8 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-FASTIGHET_THRESHOLD = 0.30
-SMABOLAG_THRESHOLD = 0.20
+FASTIGHET_THRESHOLD = 2.10
+SMABOLAG_THRESHOLD = 1.40
 
 FILE = "history.json"
 
