@@ -16,6 +16,8 @@ if not (
     (sweden_time.hour == 9 and sweden_time.minute >= 5)
     or
     (sweden_time.hour == 10 and sweden_time.minute <= 15)
+    or
+    (sweden_time.hour >= 18)
 ):
     print(f"Outside allowed time window: {sweden_time:%H:%M:%S} Sweden time")
     exit()
