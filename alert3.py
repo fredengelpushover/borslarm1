@@ -164,7 +164,7 @@ if fast_trigger or small_trigger:
             "user": os.environ["PUSHOVER_USER"],
             "title": "Tvådagarsutveckling: (sälj kl10)",
             "message": (
-                f"TRIGGER: {' | '.join(triggers)}\n\n"
+                f"TRIGGER: {' | '.join(triggers)}\n"
                 f"Fastigheter 2d: "
                 f"{fast_change:.2f}% "
                 f"(gräns {FASTIGHET_THRESHOLD:.2f}%)\n"
