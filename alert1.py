@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 OMXSPI_THRESHOLD = 1.4
 SMABOLAG_THRESHOLD = 1.4
-FASTIGHET_THRESHOLD = 2.0
+FASTIGHET_THRESHOLD = 2.1
 
 sweden_time = datetime.now(ZoneInfo("Europe/Stockholm"))
 if not (
